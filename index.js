@@ -28,7 +28,7 @@ let app = {
 	app.events = await (await fetch(url)).json();
 
 	// Fetch all event data
-	for (let i = 0; i < 1; i++) {
+	for (let i = 0; i < app.events.length; i++) {
 		await app.page.goto("https://www.sv-realtime.nl" + app.events[i]['url'], {waitUntil: 'networkidle2'});
 		await app.page.waitForSelector('.paragraphs .row .col-sm-12.paragraph-text');
 		app.events[i]['description'] = await app.getEventDetails();
