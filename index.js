@@ -9,21 +9,10 @@ const fs = require('fs');
 let app = {
 	browser: null,
 	page: null,
-	eventLinks: [],
+	eventLinks: {},
 	url: "https://www.sv-realtime.nl/evenementen/calendar",
-	from: new Date(2016,1,1), // Date of first event
-	till: new Date()
-};
-
-/*
-|--------------------------------------------------------------------------
-| Enhancing the Date object
-|--------------------------------------------------------------------------
-*/
-Date.prototype.differenceInMonths = function(date) {
-	var diff = (date.getTime() - this.getTime()) / 1000;
-	diff /= (60 * 60 * 24 * 7 * 4);
-	return Math.abs(Math.round(diff));
+	from: 2016,
+	till: new Date().getFullYear()
 };
 
 /*
@@ -36,7 +25,7 @@ Date.prototype.differenceInMonths = function(date) {
 	app.page = await app.browser.newPage();
 	await app.page.goto("https://www.sv-realtime.nl/evenementen/calendar", {"waitUntil" : "networkidle0"});
 
-	for (let i = 0; i < app.till.differenceInMonths(app.from); i++) {
+	for (let i = 0; i < app.differenceInMonths(app.from, app.till); i++) {
 		let res = await app.getEventLinks();
 		app.eventLinks[res['date']] = res['eventList'];
 
@@ -55,6 +44,10 @@ Date.prototype.differenceInMonths = function(date) {
 | App function
 |--------------------------------------------------------------------------
 */
+
+/**
+ * @returns {Promise<*>}
+ */
 app.getEventLinks = async () => {
 	return await app.page.evaluate(() => {
 		let eventList = [...document.querySelectorAll('a.fc-event')];
@@ -68,4 +61,16 @@ app.getEventLinks = async () => {
 			'eventList': eventList
 		}
 	});
+};
+
+/**
+ * @param fromYear
+ * @param tillYear
+ * @returns {number}
+ */
+app.differenceInMonths = function(fromYear, tillYear) {
+	// From year is including so we need to subtract one.
+	fromYear--;
+
+	return (tillYear - fromYear) * 12
 };
