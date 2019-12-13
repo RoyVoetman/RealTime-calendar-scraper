@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const fetch = require("node-fetch");
 const fs = require('fs');
 
 /*
@@ -9,10 +10,9 @@ const fs = require('fs');
 let app = {
 	browser: null,
 	page: null,
-	eventLinks: {},
-	url: "https://www.sv-realtime.nl/evenementen/calendar",
-	from: 2016,
-	till: new Date().getFullYear()
+	events: [],
+	from: "2016-01-01",
+	till: new Date()
 };
 
 /*
@@ -23,18 +23,18 @@ let app = {
 (async () => {
 	app.browser = await puppeteer.launch();
 	app.page = await app.browser.newPage();
-	await app.page.goto("https://www.sv-realtime.nl/evenementen/calendar", {"waitUntil" : "networkidle0"});
 
-	for (let i = 0; i < app.differenceInMonths(app.from, app.till); i++) {
-		let res = await app.getEventLinks();
-		app.eventLinks[res['date']] = res['eventList'];
+	let url = `https://www.sv-realtime.nl/evenementen/calendar/json?start=${app.from}&end=${app.dateToString(app.till)}`;
+	app.events = await (await fetch(url)).json();
 
-		// Goto previous month
-		await app.page.click('.fc-prev-button.fc-button');
-		await app.page.waitFor(500)
+	// Fetch all event data
+	for (let i = 0; i < 1; i++) {
+		await app.page.goto("https://www.sv-realtime.nl" + app.events[i]['url'], {waitUntil: 'networkidle2'});
+		await app.page.waitForSelector('.paragraphs .row .col-sm-12.paragraph-text');
+		app.events[i]['description'] = await app.getEventDetails();
 	}
 
-	fs.writeFileSync('./data/'+(new Date()).toUTCString()+'.json', JSON.stringify(app.eventLinks), 'utf-8');
+	fs.writeFileSync('./data/'+(new Date()).toUTCString()+'.json', JSON.stringify(app.events), 'utf-8');
 
 	await app.browser.close();
 })();
@@ -48,29 +48,16 @@ let app = {
 /**
  * @returns {Promise<*>}
  */
-app.getEventLinks = async () => {
+app.getEventDetails = async () => {
 	return await app.page.evaluate(() => {
-		let eventList = [...document.querySelectorAll('a.fc-event')];
-
-		eventList = eventList.map((listItem) => {
-			return listItem.getAttribute('href').trim();
-		});
-
-		return {
-			'date': document.querySelector('.fc-center h2').textContent.trim(),
-			'eventList': eventList
-		}
+		return document.querySelector('.paragraphs .row .col-sm-12.paragraph-text').textContent.trim()
 	});
 };
 
 /**
- * @param fromYear
- * @param tillYear
- * @returns {number}
+ * @param date
+ * @returns {string}
  */
-app.differenceInMonths = function(fromYear, tillYear) {
-	// From year is including so we need to subtract one.
-	fromYear--;
-
-	return (tillYear - fromYear) * 12
+app.dateToString = function (date) {
+	return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
 };
