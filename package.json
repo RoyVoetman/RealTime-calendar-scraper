@@ -1,0 +1,14 @@
+{
+  "name": "realtime-events-scraper",
+  "version": "1.0.0",
+  "description": "Web scraper to get all events from the study association website.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^1.6.0"
+  }
+}
