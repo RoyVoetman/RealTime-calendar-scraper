@@ -1,5 +1,5 @@
 # RealTime-calendar-scraper
-Web scraper to get all events from the study association website.
+xWeb scraper to get all events from the study association website.
 
 ## Prerequisites
 - Node
